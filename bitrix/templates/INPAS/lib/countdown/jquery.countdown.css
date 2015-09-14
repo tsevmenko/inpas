@@ -1,0 +1,87 @@
+/* jQuery Countdown styles 2.0.0. */
+.is-countdown {
+	margin: 0px 0px 0px 20px;
+	padding: 0px 0px 0px 0px;
+}
+.countdown-rtl {
+	direction: rtl;
+}
+.countdown-holding span {
+	color: #888;
+}
+.countdown-row {
+	clear: both;
+	width: 100%;
+	padding: 0px 0px;
+	text-align: center;
+}
+.countdown-show1 .countdown-section {
+	width: 98%;
+}
+.countdown-show2 .countdown-section {
+	width: 48%;
+}
+.countdown-show3 .countdown-section {
+	width: 32.5%;
+}
+.countdown-show4 .countdown-section {
+	width: 23%;
+}
+.countdown-show5 .countdown-section {
+	width: 19.5%;
+}
+.countdown-show6 .countdown-section {
+	width: 16.25%;
+}
+.countdown-show7 .countdown-section {
+	width: 14%;
+}
+.countdown-section {
+	display: block;
+	float: left;
+	font-size: 75%;
+	text-align: center;
+}
+.countdown-amount {
+	font-size: 200%;
+}
+.countdown-period {
+	display: block;
+	font-size: 14px;
+}
+.countdown-section {
+	display: block;
+	float: left;
+	font-size: 75%;
+	text-align: center;
+    margin-right: 10px;
+}
+/***********/
+.countdown-amount {
+    margin: 0px 0px 5px 0px;
+	padding: 23px 0px 0px 0px;
+	font-family: "IntroBold";
+    font-size: 48px;
+    color: #fff;
+    line-height: 52px;
+    width: 105px;
+	height: 98px;
+    background: url(../../images/img32.png) no-repeat 0px 0px;
+    display: block;
+}
+.countdown-period {
+    display: block;
+    margin: 0px 0px 0px 0px;
+	padding: 0px 0px 0px 0px;
+	font-family: "IntroRegular";
+    font-size: 18px;
+    color: #fff;
+    line-height: 20px;
+    text-transform: lowercase;
+    text-align: center;
+    width: 105px;
+}
+.countdown-descr {
+	display: block;
+	width: 100%;
+}

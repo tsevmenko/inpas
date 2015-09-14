@@ -1,0 +1,42 @@
+body{
+    margin: 0;
+}
+.all-banks-table{
+font-size: 14px;
+}
+.selectize-input > input{
+    margin-bottom: 8px !important;
+	top: 4px !important;
+}
+.wrapper2 .content2 .all-banks-table3 tr td{
+font-size: 12px !important;
+}
+body .nav {
+	height: 70px;
+}
+body .nav .left-menu{
+    margin-top: 0px;
+	padding: 0;
+}
+body .nav .right-menu{
+    margin-top: 0px;
+}
+body .menu .wrapper .menu-list{
+    margin: 0;
+    padding: 0;
+}
+
+/*#search .input-search-class{
+width: 100% !important;
+}*/
+
+#all-banks-table-div .block-title {
+	padding-left: 20px;
+}
+#all-banks-table-div th {
+	    text-align: left;
+    font-size: 12px;
+    font-weight: normal;
+    color: #808080;
+    padding: 10px 18px;
+}

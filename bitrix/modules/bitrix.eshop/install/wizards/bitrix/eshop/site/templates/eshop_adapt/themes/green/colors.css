@@ -1,0 +1,24 @@
+.bx-logo-text small{
+	color: #33b111;
+}
+/*ABOUT*/
+
+a.bxd-block:hover {
+	border-color: #28A906;
+}
+
+.bxd-icon {
+	border: 1px solid #28A906;
+}
+
+a.bxd-block:hover .bxd-icon {
+	background: #28A906;
+}
+
+.bxd-icon .fa {
+	color: #28A906;
+}
+
+a.bxd-block:hover .bxd-icon .fa {
+	color: #fff;
+}
