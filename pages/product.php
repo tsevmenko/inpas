@@ -2,7 +2,7 @@
 require($_SERVER["DOCUMENT_ROOT"]."/bitrix/header.php");
 $APPLICATION->SetTitle("product");
 
-$_REQUEST["ELEMENT_ID"] = 73794;
+$_REQUEST["ELEMENT_ID"] = 166494;
 ?>
 <div class="wrapper2">
 

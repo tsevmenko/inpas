@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE HTML>
 <html id="html">
 
 <head>
@@ -12,9 +12,11 @@
     $APPLICATION->AddHeadString('<meta name="viewport" content="width=device-width, initial-scale=1">');
 
     $APPLICATION->SetAdditionalCSS(SITE_TEMPLATE_PATH.'/css/jquery-ui.css');
+	$APPLICATION->SetAdditionalCSS(SITE_TEMPLATE_PATH.'/css/style.css');
     $APPLICATION->SetAdditionalCSS(SITE_TEMPLATE_PATH.'/css/tabs.css');
     $APPLICATION->SetAdditionalCSS(SITE_TEMPLATE_PATH.'/css/selectize.css');
-    $APPLICATION->SetAdditionalCSS(SITE_TEMPLATE_PATH.'/css/style.css');
+
+    $APPLICATION->SetAdditionalCSS(SITE_TEMPLATE_PATH.'/css/bootstrap-tagsinput.css');
 ?>
     <!--[if lt IE 9]>
     <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
@@ -79,15 +81,14 @@
     <div class="wrapper">
 
         <ul class="menu-list">
-            <li><a href="/otchet-po-banku/">Отчёт по банку</a></li>
+			<li><a href="/otchet-po-banku/">Отчёт по банку</a></li>
             <li><a href="/otchet-po-nomeru-scheta/">Отчёт по номеру счёта</a></li>
-            <li><a href="#">Отгруженное оборудование</a></li>
-            <li><a href="#">Оборудование в сервисе</a></li>
-            <li><a href="#">По серийным номерам</a></li>
-            <li><a href="#">Все ремонты клиента</a></li>
+			<li><a href="/report-sent-equipment/">Отгруженное оборудование</a></li>
+            <li><a href="/oborudovanie-v-service/">Оборудование в сервисе</a></li>
+			<li><a href="/report-serial-number/">По серийным номерам</a></li>
+			<li><a href="/report-all-fixes/">Все ремонты клиента</a></li>
         </ul>
 
     </div>
 
 </div>
-

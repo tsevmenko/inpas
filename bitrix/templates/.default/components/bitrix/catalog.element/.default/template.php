@@ -39,31 +39,11 @@
 		<td>Действие</td>
 	</tr>
 
-	<?foreach($arResult["ITEMS"] as $arItem):?>
-	<?
-		$this->AddEditAction($arItem['ID'], $arItem['EDIT_LINK'], CIBlock::GetArrayByID($arItem["IBLOCK_ID"], "ELEMENT_EDIT"));
-		$this->AddDeleteAction($arItem['ID'], $arItem['DELETE_LINK'], CIBlock::GetArrayByID($arItem["IBLOCK_ID"], "ELEMENT_DELETE"), array("CONFIRM" => GetMessage('CT_BNL_ELEMENT_DELETE_CONFIRM')));
-	?>
-		<tr id="<?=$this->GetEditAreaId($arItem['ID']);?>">
-			<td><?=$arItem['ACTIVE_FROM']?></td>
-			<td><span><?=$arItem['NAME']?></span>
-				<? if(count($arItem['COMMENTS']) > 0):?>
-					<div class="splCont">
-						<span class="s1"><?=$arProperty["NAME"]?>,</span> <span class="s2"><?=$arProperty["DATE"]?></span>
-						<div class="clear"></div>
-						<div class="quote"><?=$arProperty['TEXT']?></div>
-					</div>
-				<? endif; ?>
-			</td>
+	<?foreach($arResult['PROPERTIES']['HISTORY']["VALUE"] as $arItem):?>
+		<tr>
+			<td><?=date("d-m-Y", strtotime($arResult['PROPERTIES']['HISTORY']['TIMESTAMP_X']))?></td>
+			<td><span><?=$arItem?></span></td>
 		</tr>
-
 	<?endforeach;?>
 
 </table>
-
-
-
-<?
-	//d($arResult);
-	return $arResult['PEROPERTIES']['HISTORY']['VALUE'];
-?>

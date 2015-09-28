@@ -2,15 +2,17 @@
 $this->setFrameMode(true);
 
 $conn = ConnectToOracleDB();
-
+$_SESSION['BANKID'] = $arResult['PROPERTIES']['ORA_ID']['VALUE'];
 $query = 'SELECT ship.SERIAL_NUM,eq.NAME,ship.CUSTOMER_ID,TO_CHAR( ship.DATA_REG, \'dd.mm.yyyy\' ) as DATA_REG,TO_CHAR( ship.WARRANTY, \'dd.mm.yyyy\' ) as WARRANTY, (SELECT NAME FROM STATUS_HB WHERE ID = ship.STATUS_ID) as STATUS,ship.INVOICE,ship.WAYBILL,eq.PARTNUM,eq.NAME FROM EQUIPMENT_HB eq, TERM_SHIPP ship WHERE eq.PARTNUM = ship.TYPE_EQUIP AND ship.CUSTOMER_ID = \''.$arResult['PROPERTIES']['ORA_ID']['VALUE'].'\' ORDER BY ship.SERIAL_NUM';
 
 $stid = oracleQueryExecute(ConnectToOracleDB(), $query);
+
 $equipment = array();
 $equipment['TOTAL_COUNT'] = 0;
 $equipment['WARRANTY_COUNT'] = 0;
 $equipment['WITHOUT_WARRANTY_COUNT'] = 0;
 $equipment['IN_SERVICE'] = 0;
+
 $query = 'select * from servise_all where serial_number in (';
 $_SESSION['devices'] = array();
 while ($row = oci_fetch_array($stid, OCI_ASSOC+OCI_RETURN_NULLS)) {
@@ -37,6 +39,7 @@ foreach($equipment as $k => $v){
 	foreach($v as $kk => $vv){
 		$equipment['TOTAL_COUNT']++;
 		$equipment[$k]['TOTAL_COUNT']++;
+
 		if(time() <= strtotime($vv['WARRANTY'])){
 			$equipment['WARRANTY_COUNT']++;
 			$equipment[$k]['WARRANTY_COUNT']++;
@@ -95,4 +98,3 @@ odbc_close($connection);
 		<?endforeach;?>
 
 	</table>
-<?return '123';?>

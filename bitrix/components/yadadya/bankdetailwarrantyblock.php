@@ -3,16 +3,27 @@
 //$_REQUEST['DATE_TO'] = "23.04.2011";
 //	$_REQUEST['DATE_FROM'] = "20.04.2011";
 
+	$conn = ConnectToOracleDB();
+
+	$query = 'SELECT ship.SERIAL_NUM,eq.NAME,ship.CUSTOMER_ID,TO_CHAR( ship.DATA_REG, \'dd.mm.yyyy\' ) as DATA_REG,TO_CHAR( ship.WARRANTY, \'dd.mm.yyyy\' ) as WARRANTY, (SELECT NAME FROM STATUS_HB WHERE ID = ship.STATUS_ID) as STATUS,ship.INVOICE,ship.WAYBILL,eq.PARTNUM,eq.NAME FROM EQUIPMENT_HB eq, TERM_SHIPP ship WHERE eq.PARTNUM = ship.TYPE_EQUIP AND ship.CUSTOMER_ID = \''.$_SESSION['BANKID'].'\' ORDER BY ship.SERIAL_NUM';
+
+	$stid = oracleQueryExecute(ConnectToOracleDB(), $query);
+
+	$_SESSION['devices'] = array();
+	while ($row = oci_fetch_array($stid, OCI_ASSOC+OCI_RETURN_NULLS)) {
+		$_SESSION['devices'][] = $row['SERIAL_NUM'];
+	}
+
 	$arrFilter = array (
 		array(
 			"LOGIC" => "AND",
 			array("PROPERTY_SERIAL_NUMBER" => $_SESSION['devices']),
 			array("<PROPERTY_SHIPPING_DATE" => date("Y-m-d 00:00:00", strtotime($_REQUEST['DATE_TO']))),
 			array(">PROPERTY_SHIPPING_DATE" => date("Y-m-d 00:00:00", strtotime($_REQUEST['DATE_FROM']))),
-			array("<PROPERTY_END_OF_WARRANTY" => date('Y-m-d 00:00:00', time()))
+			//array("<PROPERTY_END_OF_WARRANTY" => date('Y-m-d 00:00:00', time()))
 		),
 	);
-
+	
 	$APPLICATION->IncludeComponent(
 			"bitrix:news.list", 
 			"bank_detail_warranty", 
@@ -123,9 +134,10 @@
 				"USE_SHARE" => "N"
 			),
 			false
-);?>
+		);?>
 
 <script src="<?=SITE_TEMPLATE_PATH?>/js/datepicker-ru.js"/>
+
 <script src="<?=SITE_TEMPLATE_PATH?>/js/common.js"/>
 
 <? require($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/main/include/epilog_after.php"); ?>

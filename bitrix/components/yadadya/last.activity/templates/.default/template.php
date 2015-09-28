@@ -9,20 +9,28 @@
 		$_REQUEST['DATE_TO'] = date("d.m.Y");
 	}
 
+	$arFilter = Array("IBLOCK_ID"=>7,
+			'>=DATE_CREATE' => $_REQUEST['DATE_FROM'],
+  			'<=DATE_CREATE' => $_REQUEST['DATE_TO'] . ' 23:59:59');
 
-		$arFilter = Array("IBLOCK_ID"=>7, 
-				'>=DATE_CREATE' => $_REQUEST['DATE_FROM'],
-      			'<=DATE_CREATE' => $_REQUEST['DATE_TO'] . ' 23:59:59');
-
+	$result = array();
 	$res = CIBlockElement::GetList(Array("DATE_CREATE"), $arFilter, false, false, $arSelect);
-	while($ob = $res->GetNextElement())
+	while($ob = $res->GetNext())
 	{
-		$arFields = $ob->GetFields();
-		$arProps = $ob->GetProperties();
-		$ids[] = $arFields['ID'];
-		$result[$arFields['ID']] = Array("TEXT" => $arFields["NAME"], "PLACE" => $arProps['PLACE']['VALUE'], "DATE_CREATE" => $arFields['DATE_CREATE']);
+		$obj = array();
+		$obj['ID'] = $ob['NAME'];
+		switch($ob['PREVIEW_TEXT']){
+			case "UPD":
+				$obj['TEXT'] = " был обновлен, остаток гарантийного срока - ".$ob['DETAIL_TEXT'];
+			break;
+			case "ADD":
+				$obj['TEXT'] = " был добавлен, остаток гарантийного срока - ".$ob['DETAIL_TEXT'];
+			break;
+		}
+
+		$result[] = $obj;
 	}
-	$arSelect = Array();
+	/*$arSelect = Array();
 	$arFilter = Array("IBLOCK_ID"=>6, "PROPERTY_HISTORY" => $ids);
 	$res = CIBlockElement::GetList(Array("DATE_CREATE"), $arFilter, false, false, $arSelect);
 
@@ -44,7 +52,7 @@
 				$result[$v]['PIC'] = CFile::GetPath($arFields['PREVIEW_PICTURE']);
 			}
 		}
-	}
+	}*/
 	?>
 	<div class="block-title">
 		 Последние изменения по сервису
@@ -88,10 +96,10 @@
 			<li>
 				<div class="image">
 					<?if($v['PIC'] == '') $v['PIC'] = '/resourses/product-1.jpg';?>
-					<a href="#"><img src="<?=$v['PIC']?>" alt="<?=$v['TEXT']?>"></a>
+					<a href="/device/ELEMENT_ID=<?=$v['NAME']?>"><img src="<?=$v['PIC']?>" alt="<?=$v['TEXT']?>"></a>
 				</div>
 				<div class="text">
-					 Товар ID <?=$v['SERIAL']?> <?=$v['TEXT']?>, остаток гарантийного срока — <?=$v['WARRANTY']?>
+					 Товар ID <?=$v['ID']?> <?=$v['TEXT']?>
 				</div>
 			</li>
 		<?endforeach;?>

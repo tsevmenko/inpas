@@ -106,9 +106,11 @@ $APPLICATION->SetTitle("bank");
 			$_REQUEST['DATE_TO'] = date("d.m.Y");
 		}
 		global $arrFilter;
-// for test
-$_REQUEST['DATE_TO'] = "23.04.2011";
-$_REQUEST['DATE_FROM'] = "20.04.2011";
+		// for test
+		$_REQUEST['DATE_TO'] = "23.04.2011";
+		$_REQUEST['DATE_FROM'] = "20.04.2011";
+		//$_REQUEST['DATE_TO'] = "23.04.2020";
+		//$_REQUEST['DATE_FROM'] = "20.04.2000";
 
 		$arrFilter = array (
 			array(

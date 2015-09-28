@@ -1,5 +1,5 @@
 <?
-//AddEventHandler("iblock", "OnBeforeIBlockElementUpdate", "elementHandler");
+AddEventHandler("iblock", "OnBeforeIBlockElementUpdate", "elementHandlerUpdate");
 AddEventHandler("iblock", "OnBeforeIBlockElementAdd", "elementHandlerAdd");
 
 define("PRODUCTS_INFOBLOCK", 6);
@@ -16,7 +16,7 @@ function declOfNum($number, $titles)
 function generateRandomString($length = 10) {
     $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
     $charactersLength = strlen($characters);
-    $randomString = '';
+    $generateRandomStringtring = '';
     for ($i = 0; $i < $length; $i++) {
         $randomString .= $characters[rand(0, $charactersLength - 1)];
     }
@@ -64,8 +64,68 @@ function d($ar)
     }
 }
 
+function elementHandlerUpdate($arFields)
+{
+    if($arFields['IBLOCK_ID'] == 6){
+
+        $el = new CIBlockElement;
+
+        reset($arFields['PROPERTY_VALUES'][19]);
+        $first_key = key($arFields['PROPERTY_VALUES'][19]);
+        $endOfWarranty = $arFields['PROPERTY_VALUES'][19][$first_key]['VALUE'];
+
+
+        if(strtotime(date("Y-m-d")) > strtotime($endOfWarranty))
+            $endOfWarranty = " истек ";
+        else
+        {
+            $countDays = ceil(s_datediff('d', date('Y-m-d'), $endOfWarranty));
+            $endOfWarranty = declOfNum($countDays, array('день', 'дня', 'дней'));
+        }
+
+        $arLoadProductArray = Array(
+          "IBLOCK_ID"      => 7,
+          "NAME"           => $arFields['NAME'],
+          "ACTIVE"         => "Y",
+          "PREVIEW_TEXT"   => "UPD",
+          "DETAIL_TEXT"    => $endOfWarranty,
+        );
+
+        $PRODUCT_ID = $el->Add($arLoadProductArray);
+    }
+    
+}
+
 function elementHandlerAdd($arFields)
 {
+    if($arFields['IBLOCK_ID'] == 6){
+
+        $el = new CIBlockElement;
+
+        reset($arFields['PROPERTY_VALUES'][19]);
+        $first_key = key($arFields['PROPERTY_VALUES'][19]);
+        $endOfWarranty = $arFields['PROPERTY_VALUES'][19][$first_key]['VALUE'];
+
+
+        if(strtotime(date("Y-m-d")) > strtotime($endOfWarranty))
+            $endOfWarranty = " истек ";
+        else
+        {
+            $countDays = ceil(s_datediff('d', date('Y-m-d'), $endOfWarranty));
+            $endOfWarranty = declOfNum($countDays, array('день', 'дня', 'дней'));
+        }
+
+        $arLoadProductArray = Array(
+          "IBLOCK_ID"      => 7,
+          "NAME"           => $arFields['ID'],
+          "ACTIVE"         => "Y",
+          "PREVIEW_TEXT"   => "UPD",
+          "DETAIL_TEXT"    => $endOfWarranty,
+        );
+
+        $PRODUCT_ID = $el->Add($arLoadProductArray);
+    }
+   
 	// add | save history comment
 	if($arFields['IBLOCK_ID'] == 8){
 		// add fio as comment name

@@ -40,3 +40,10 @@ width: 100% !important;
     color: #808080;
     padding: 10px 18px;
 }
+.allFixesBankPreloader{
+	display: none;
+    width: 60px;
+    position: absolute;
+    margin-top: -41px;
+    margin-left: -70px;
+}

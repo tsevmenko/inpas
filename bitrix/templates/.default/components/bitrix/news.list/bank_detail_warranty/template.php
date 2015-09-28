@@ -26,6 +26,7 @@ if($_REQUEST['DATE_TO'] == '') $_REQUEST['DATE_TO'] = date("d.m.Y");
 	<div class="clear"></div>
 
 	<div class="alert green width800">
+		
 		<?=$arResult['NAV_RESULT']->NavRecordCount?> аппаратов снято с гарантии до истечения гарантийного срока (в рамках заданных параметров времени)
 		<div class="alert-close">×</div>
 	</div>

@@ -14,8 +14,8 @@
 
 datepicker.regional['ru'] = {
 	closeText: 'Закрыть',
-	prevText: '<Пред',
-	nextText: 'След>',
+	prevText: '&#x3C;Пред',
+	nextText: 'След&#x3E;',
 	currentText: 'Сегодня',
 	monthNames: ['Январь','Февраль','Март','Апрель','Май','Июнь',
 	'Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'],
@@ -29,8 +29,7 @@ datepicker.regional['ru'] = {
 	firstDay: 1,
 	isRTL: false,
 	showMonthAfterYear: false,
-	yearSuffix: ''
-};
+	yearSuffix: ''};
 datepicker.setDefaults(datepicker.regional['ru']);
 
 return datepicker.regional['ru'];

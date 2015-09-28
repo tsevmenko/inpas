@@ -3,6 +3,11 @@
 CModule::IncludeModule("iblock");
 
 global $arrFilter;
+
+if(strpos($_REQUEST['BILL'], ',') > 0){
+	$_REQUEST['BILL'] = explode(',', $_REQUEST['BILL']);
+}
+
 $arrFilter = Array("IBLOCK_ID" => PRODUCTS_INFOBLOCK, "PROPERTY_BILL_NUMBER" => $_REQUEST['BILL']);
 
 $APPLICATION->IncludeComponent(
@@ -49,7 +54,7 @@ $APPLICATION->IncludeComponent(
 		"DISPLAY_NAME" => "Y",
 		"DISPLAY_PICTURE" => "Y",
 		"DISPLAY_PREVIEW_TEXT" => "Y",
-		"PAGER_TEMPLATE" => ".default",
+		"PAGER_TEMPLATE" => "history_pagination",
 		"DISPLAY_TOP_PAGER" => "N",
 		"DISPLAY_BOTTOM_PAGER" => "Y",
 		"PAGER_TITLE" => "Новости",

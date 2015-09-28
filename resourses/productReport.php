@@ -41,7 +41,6 @@ if($_REQUEST['productReport'] == "Y"){
 	header("Content-Transfer-Encoding: binary");
 	xlsBOF();
 
-
 	if($_REQUEST['type'] == "getReport"){
 
 		xlsWriteLabel(0, 0, iconv("utf-8", "windows-1251", "Владелец"));

@@ -16,7 +16,7 @@ $objPHPExcel->getActiveSheet()->setTitle('sheet1');
 
 $arFilter = Array("IBLOCK_ID"=>PRODUCTS_INFOBLOCK, "ACTIVE"=>"Y", "ID" => $_SESSION['ids']);
 $res = CIBlockElement::GetList(Array(), $arFilter, false, false, Array());
-
+/*
 $objPHPExcel->setActiveSheetIndex(0)->setCellValue('A1', "Период: ");
 $objPHPExcel->setActiveSheetIndex(0)->setCellValue('B1', "с ".$_SESSION['DATE_FROM']);
 $objPHPExcel->setActiveSheetIndex(0)->setCellValue('C1', "по ".$_SESSION['DATE_TO']);
@@ -46,7 +46,7 @@ while($ob = $res->GetNextElement())
 	$objPHPExcel->setActiveSheetIndex(0)->setCellValue('E'.$i, $arProps['STATUS']['VALUE']);
 	$i++;
 }
-
+*/
 foreach(range('A','L') as $columnID) {
 	$objPHPExcel->getActiveSheet()->getColumnDimension($columnID)->setAutoSize(true);
 }

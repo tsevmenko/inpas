@@ -3,9 +3,18 @@ $this->setFrameMode(true);
 ?>
 <?if($_REQUEST['BILL'] == '') $_REQUEST['BILL'] = "N/A"; ?>
 <?$_SESSION['ids'] = Array();?>
+<?if(is_array($_REQUEST['BILL'])) $_REQUEST['BILL'] = implode(", ", $_REQUEST['BILL'])?>
+
+<?// declare variable in session for probably xls order query 
+
+$_SESSION['otchet-po-nomeru-scheta'] = array();
+
+// end SESSION declare
+?>
+
 <h5>Отчет номеру счета: <span><?=$_REQUEST['BILL']?></span></h5>
 
-<a class="btn" href="/phpexcel/ShippingEquipmentReportByBill.php">Скачать отчет</a>
+<a class="btn-white right" href="/phpexcel/ShippingEquipmentReportByBill.php">Скачать отчет</a>
 
 	<div class="clear"></div>
 
@@ -20,7 +29,7 @@ $this->setFrameMode(true);
 		</tr>
 		<? $i = 1; foreach($arResult["ITEMS"] as $arItem):?>
 		<?
-			$_SESSION['ids'][] = $arItem['ID'];
+			$_SESSION['otchet-po-nomeru-scheta'][] = $arItem['ID'];
 			$this->AddEditAction($arItem['ID'], $arItem['EDIT_LINK'], CIBlock::GetArrayByID($arItem["IBLOCK_ID"], "ELEMENT_EDIT"));
 			$this->AddDeleteAction($arItem['ID'], $arItem['DELETE_LINK'], CIBlock::GetArrayByID($arItem["IBLOCK_ID"], "ELEMENT_DELETE"), array("CONFIRM" => GetMessage('CT_BNL_ELEMENT_DELETE_CONFIRM')));
 		?>
@@ -37,7 +46,6 @@ $this->setFrameMode(true);
 
 	<div class="clear"></div>  
 
-
-	<? if(count($arResult['ITEMS']) > 0):?>
+	<? if($arResult['NAV_RESULT']->nEndPage != 1):?>
 		<?=$arResult["NAV_STRING"]?>
 	<? endif; ?>

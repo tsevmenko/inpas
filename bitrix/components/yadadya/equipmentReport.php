@@ -32,8 +32,6 @@ if($_REQUEST['OFFICE'] != 'none'){
 	}
 
 }
-// невероятная лажа с фильтром по дате. Не отстреливаю в чем дело. Потратил уже 4 часа, не могу понять
-// почему не фильтрует по >=PROPERTY_SHIPPING_DATE решил сделать пока по фильтру с БД (костыль, но жить как то надо)
 $arFilter = Array("IBLOCK_ID"=>PRODUCTS_INFOBLOCK, "ID" => $ids, "ACTIVE"=>"Y");
 $res = CIBlockElement::GetList(Array(), $arFilter, false, false, Array());
 $ids = Array();

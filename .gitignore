@@ -1,0 +1,6 @@
+*.htaccess
+bitrix/backup/*
+bitrix/managed_cache/*
+bitrix/cache/*
+upload/*
+bitrix/stack_cache/*

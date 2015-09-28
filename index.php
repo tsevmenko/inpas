@@ -1,297 +1,279 @@
 <?
 require($_SERVER["DOCUMENT_ROOT"]."/bitrix/header.php");
-define(PAGE_SIZE, 1000);
-global $USER;
-set_time_limit (100000000); 
+$APPLICATION->SetTitle("INPAS");
 CModule::IncludeModule("iblock");
-
-function GetProductsCount($conn){
-    $query = 'SELECT COUNT(*) as "COUNT"
-                     FROM EQUIPMENT_HB eq, TERM_SHIPP ship 
-                     WHERE eq.PARTNUM = ship.TYPE_EQUIP
-                     ORDER BY ship.SERIAL_NUM';
-    $stid = oci_parse($conn, $query);
-    if (!$stid) {
-        $e = oci_error($conn);
-        trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
-    }
-
-    $r = oci_execute($stid);
-    if (!$r) {
-        $e = oci_error($stid);
-        trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
-    }
-    while ($row = oci_fetch_array($stid, OCI_ASSOC+OCI_RETURN_NULLS)) { oci_free_statement($stid); return $row['COUNT']; }
-}
-function getProductsFrom($userId, $conn, $startSerial, $DB){
-    
-    $querystart = microtime(true);
-
-    if($startSerial){
-        $query = 'SELECT ship.SERIAL_NUM, 
-                         eq.NAME, 
-                         ship.CUSTOMER_ID, 
-                         TO_CHAR( ship.DATA_REG, \'dd.mm.yyyy\' ) as DATA_REG, 
-                         TO_CHAR( ship.WARRANTY, \'dd.mm.yyyy\' ) as WARRANTY, 
-                         (SELECT NAME FROM STATUS_HB WHERE ID = ship.STATUS_ID) as STATUS, 
-                         ship.INVOICE, 
-                         ship.WAYBILL, 
-                         eq.PARTNUM, 
-                         eq.NAME 
-                         FROM EQUIPMENT_HB eq, TERM_SHIPP ship 
-                         WHERE eq.PARTNUM = ship.TYPE_EQUIP AND ship.SERIAL_NUM > \''.$startSerial.'\' AND ROWNUM < '.(PAGE_SIZE + 1).'
-                         ORDER BY ship.SERIAL_NUM';
-    }
-    else{
-        $query = 'SELECT ship.SERIAL_NUM, 
-                         eq.NAME, 
-                         ship.CUSTOMER_ID, 
-                         TO_CHAR( ship.DATA_REG, \'dd.mm.yyyy\' ) as DATA_REG, 
-                         TO_CHAR( ship.WARRANTY, \'dd.mm.yyyy\' ) as WARRANTY, 
-                         (SELECT NAME FROM STATUS_HB WHERE ID = ship.STATUS_ID) as STATUS, 
-                         ship.INVOICE, 
-                         ship.WAYBILL, 
-                         eq.PARTNUM, 
-                         eq.NAME 
-                         FROM EQUIPMENT_HB eq, TERM_SHIPP ship 
-                         WHERE eq.PARTNUM = ship.TYPE_EQUIP AND ROWNUM < '.(PAGE_SIZE + 1).'
-                         ORDER BY ship.SERIAL_NUM';
-    }
-    $stid = oci_parse($conn, $query);
-    if (!$stid) {
-        $e = oci_error($conn);
-        trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
-    }
-    $r = oci_execute($stid);
-    if (!$r) {
-        $e = oci_error($stid);
-        trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
-    }
-    $i = 0;
-    $resAr = array();
-    $mssqlsn = ''; // mssql serial numbers
-
-    $time = microtime(true) - $querystart;
-    printf('Выполнили запрос Oracle за %.2F сек.<br/>', $time);
-
-    while ($row = oci_fetch_array($stid, OCI_ASSOC+OCI_RETURN_NULLS)) {
-        
-        $obj = array();
-        $obj[15] = $row['SERIAL_NUM'];
-        $obj[16] = $row['NAME'];
-        $obj[17] = $row['CUSTOMER_ID'];
-        $obj[18] = $row['DATA_REG'];
-        $obj[19] = $row['WARRANTY'];
-        $obj[20] = $row['STATUS'];
-        $obj[21] = $row['INVOICE'];
-        $obj[22] = $row['WAYBILL'];
-        $obj[34] = $row['PARTNUM'];
-
-        $resAr[$row['SERIAL_NUM']] = $obj;
-
-        $mssqlsn .= '\''.implode('-',str_split($row['SERIAL_NUM'], 3)).'\', ';
-        $mssqlsna[] = $row['SERIAL_NUM'];
-
-        if(++$i >= PAGE_SIZE) {
-
-            // get info from mssql 
-            $querystart = microtime(true);
-            $msdata = GetMSSQLData(ConnectToMSSQL(), 'select * from servise_all where serial_number in ('.substr_replace($mssqlsn ,"",-2).')');
-            $time = microtime(true) - $querystart;
-            printf('Выполнили запрос MSSQL за %.2F сек.<br/>', $time);
-            // merge arrays
-            foreach ($msdata as $k => $v) {
-
-                $resAr[$k][20] = $msdata[$k]['MAIN_STATUS'];
-                $resAr[$k][23] = $msdata[$k]['SERVICE_OPERATIONS']; 
-                $resAr[$k][44] = $msdata[$k]['NAME'];
-                $resAr[$k][45] = $msdata[$k]['SUBMIT_DATE'];
-                $resAr[$k][46] = $msdata[$k]['ACTION_TIMESTAMP'];
-                $resAr[$k][49] = $msdata[$k]['MAIN_STATUS'];
-            }
-            // save changes
-            $savestart = microtime(true);
-            SaveOrUpdateElement($resAr, $userId, $mssqlsna, $DB);
-            $time = microtime(true) - $savestart;
-            printf('Сохранили данные за %.2F сек.<br/>', $time);
-            // last moment
-            $res = array("serial" => $row['SERIAL_NUM'], "count" => $i); 
-            oci_free_statement($stid); 
-            return $res;
-        }
-    }
-}
-function updateOrInsertProp($val, $propId, $elId, $DB){
-    if($propId != 23){
-        switch($propId){
-            case 18: $val = date("Y-m-d", strtotime($val)); break;
-            case 19: $val = date("Y-m-d", strtotime($val)); break;
-        }
-        $query="SELECT COUNT(*) as 'count' FROM b_iblock_element_property WHERE IBLOCK_PROPERTY_ID = $propId AND IBLOCK_ELEMENT_ID = $elId";
-        $result=$DB->Query($query);
-        $result = $result->GetNext();
-    }
-    else{
-        $result['count'] = 0;
-    }
-    if($result['count'] == 0){
-        if($propId == 23){
-            $result = $DB->Query("delete from b_iblock_element_property where IBLOCK_PROPERTY_ID = $propId AND IBLOCK_ELEMENT_ID = $elId");
-            foreach($val as $k => $v){
-                $result = $DB->Query("insert into b_iblock_element_property (IBLOCK_PROPERTY_ID, IBLOCK_ELEMENT_ID, VALUE) values ($propId, $elId, '$v')");
-            }
-        }
-        else{
-            $result = $DB->Query("insert into b_iblock_element_property (IBLOCK_PROPERTY_ID, IBLOCK_ELEMENT_ID, VALUE) values ($propId, $elId, '$val')");
-        }
-    }else{
-        $result = $DB->Query("update b_iblock_element_property SET VALUE = '$val' WHERE IBLOCK_PROPERTY_ID = $propId AND IBLOCK_ELEMENT_ID = $elId");
-    }
-    if($result->result != 1){
-        echo 'error! val: $val; propId: $propId; elId: $elId<br/>';
-    }
-}
-function SaveOrUpdateElement($res, $userId, $serials, $DB){
-
-    $arFilter = Array("IBLOCK_ID" => 6, "PROPERTY_SERIAL_NUMBER" => $serials);
-    $r = CIBlockElement::GetList(Array(), $arFilter, false, false, Array("ID", "IBLOCK_ID", "PROPERTY_SERIAL_NUMBER"));
-    
-    $serials = array();
-
-    while($ob = $r->GetNext()){
-        $serials[$ob['ID']] = $ob['PROPERTY_SERIAL_NUMBER_VALUE'];
-    }
-
-    foreach ($res as $k => $v) {
-
-        if(in_array($v[15], $serials)){
-            $id = array_search($v[15], $serials);
-            $dbres = $DB->Query("update b_iblock_element SET NAME = '$v[16]' WHERE ID = $id;", true);
-            echo 'ID: '.$id.' update<br/>';
-        }
-        else{
-            $dbres = $DB->Query("insert into b_iblock_element (IBLOCK_ID, ACTIVE, SORT, NAME) values (\"6\", \"Y\", \"500\", '$v[16]')", true);
-            $id = $DB->LastID();
-            echo 'ID: '.$id.' insert<br/>';
-        }
-        foreach ($v as $kk => $vv) {
-            updateOrInsertProp($v[$kk], $kk, $id, $DB);
-        }
-    }
-}
-
-function ParseBanks($userId){
-
-    $el = new CIBlockElement;
-
-    $conn = ConnectToOracleDB();
-    $query = 'SELECT * FROM ORGANIZATIONS_HB';
-    $stid = oci_parse($conn, $query);
-    if (!$stid) {
-        $e = oci_error($conn);
-        trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
-    }
-
-    $r = oci_execute($stid);
-    if (!$r) {
-        $e = oci_error($stid);
-        trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
-    }
-    
-    // get all existing banks
-    $arFilter = Array("IBLOCK_ID"=>10);
-    $res = CIBlockElement::GetList(Array(), $arFilter, false, false, array());
-    $banks = array();
-    while($ob = $res->GetNext())
-    {
-        $arFields = $ob->GetFields();
-        $arProps = $ob->GetProperties();
-        
-        if($arProps['ORA_ID']['VALUE'] != ''){
-            $banks[$arProps['ORA_ID']['VALUE']] = array();
-            $banks[$arProps['ORA_ID']['VALUE']]['EXIST'] = 'Y';
-            $banks[$arProps['ORA_ID']['VALUE']]['ID'] = $arFields['ID'];
-        }
-    }
-
-    while ($row = oci_fetch_array($stid, OCI_ASSOC+OCI_RETURN_NULLS)) {
-
-        $PROP = array();
-        $PROP[47] = $row['ID'];
-        $PROP[48] = $row['PRFX'];
-
-        $arLoadProductArray = Array(
-            "MODIFIED_BY"    => $userId,
-            "IBLOCK_ID"      => 10,
-            "PROPERTY_VALUES"=> $PROP,
-            "NAME"           => $row['NAME'],
-            "ACTIVE"         => "Y"
-        );
-
-        if($banks[$row['ID']]['EXIST'] != 'Y') {
-
-            if($PRODUCT_ID = $el->Add($arLoadProductArray))
-                echo $PRODUCT_ID.' bank added<br/>';
-            else
-                echo "Failed to create a bank: ".$el->LAST_ERROR.'<br/>';
-        }
-        else{
-            $updateRes = $el->Update($banks[$row['ID']]['ID'], $arLoadProductArray);
-            if($updateRes){
-                echo 'Bank '.$row['NAME'].' updated. id: '.$banks[$row['ID']]['ID'].'<br/>';
-            }
-            else{
-                echo 'Error updating - Bank '.$row['NAME'].'<br/>';   
-            }
-        }
-    }    
-}
-
-
-if($_REQUEST['page'] == '') {
-    ?> <a href="/?page=1">Start</a> <?
-}
-else{
-    $start = microtime(true);
-    
-    $connstart = microtime(true);
-    $conn = ConnectToOracleDB();
-    $time = microtime(true) - $connstart;
-    printf('Подключились к Oracle за %.2F сек.<br/>', $time);
-    if($_REQUEST['all_pages'] == ''){
-        $products = GetProductsCount($conn);
-        $_REQUEST['all_pages'] = ceil($products / PAGE_SIZE);
-    }
-
-    if($_REQUEST['page'] > $_REQUEST['all_pages']){
-        echo 'Parse banks...<br/>';
-        ParseBanks($USER->GetID());
-        echo 'Parse banks done';
-        oci_close($conn);
-        return false;
-    }
-
-    echo "Page № ".$_REQUEST['page'].' from '.$_REQUEST['all_pages'].'<br/>';
-
-    $res = array('serial' => $_REQUEST['serial'], 'count' => PAGE_SIZE);
-
-    $res = getProductsFrom($USER->GetID(), $conn, $res['serial'], $DB);
-
-    $_REQUEST['page']++;
-
-    if($res['count'] <= PAGE_SIZE) {
-        ?><script>var url = "/?serial=" + "<?=$res['serial']?>" + "&page=" + "<?=$_REQUEST['page']?>" + '&all_pages=' + "<?=$_REQUEST['all_pages']?>";</script><? 
-    }
-    $time = microtime(true) - $start;
-    printf('Страница отработана за %.2F сек.<br/>', $time);
-}
 ?>
 <script>
-    $(function(){
-        setTimeout(function(){
-            if(url) window.location.replace(url);
-        }, 1000);
-        
-    });
+$(function(){
+	$('#content2').css('display', 'none');
+	$('#searchBankButton').on('click', function(){
+		$('#content1').css('display', 'block');
+		$('#content2').css('display', 'none');
+		$('#lastActivityWrapper').css('display', 'block');
+	});
+
+	$('#searchProductButton').on('click', function(){
+		$('#content1').css('display', 'none');
+		$('#content2').css('display', 'block');
+		$('#lastActivityWrapper').css('display', 'none');
+	});
+});
 </script>
-<?require($_SERVER["DOCUMENT_ROOT"]."/bitrix/footer.php");?>
+<div class="wrapper">
+	<div class="content">
+		<div class="tabs">
+ 	<input id="tab1" type="radio" name="tabs" checked=""> 
+	<label for="tab1" id="searchBankButton">Поиск по банку</label> 
+	<input id="tab2" type="radio" name="tabs"> 
+	<label for="tab2" id="searchProductButton">Поиск по товару</label> 
+
+<section id="content1">
+	<div class="inner">
+		<form id="search" class="bank-block">
+			<div class="row">
+				<input type="text" class="input-search-class" id="input-search-1" placeholder="Введи поисковое значение, например:">
+				<div class="input-placeholder input-search-1"><a href="#" data-id="input-search-1" data-value="Сбербанк">сбербанк</a></div>
+			</div>
+			<div class="row">
+				<div class="banks-selector">
+					<div class="col col-1">
+						<select id="bank-1-variants-sel" placeholder="Введите название банка...">
+							<option value="none">Введите название банка...</option>
+							<?
+								$arSelect = Array("ID", "NAME", "CODE");
+								$arFilter = Array("IBLOCK_ID" => BANK_INFOBLOCK, "ACTIVE" => "Y");
+								$res = CIBlockElement::GetList(Array(), $arFilter, false, false, $arSelect);
+
+								while($ob = $res->GetNextElement())
+								{
+									$arFields = $ob->GetFields();?>
+									<option value="<?=$arFields['ID']?>"><?=$arFields['NAME']?></option>
+						  	  <?}
+						  	?>
+						</select>
+					</div>
+
+					<div class="col col-2">
+						<select id="bank-2-variants-sel" placeholder="Введите регион...">
+							<option value="none">Введите регион...</option>
+							<?
+								$arSelect = Array("ID", "NAME", "CODE");
+								$arFilter = Array("IBLOCK_ID" => REGION_INFOBLOCK, "ACTIVE" => "Y");
+								$res = CIBlockElement::GetList(Array(), $arFilter, false, false, $arSelect);
+
+								while($ob = $res->GetNextElement())
+								{
+									$arFields = $ob->GetFields();?>
+									<option value="<?=$arFields['ID']?>"><?=$arFields['NAME']?></option>
+						  	  <?}
+						  	?>
+						</select>
+					</div>
+					<div class="col col-3">
+						<button class="btn-blue">Найти</button>
+					</div>
+					<div class="clear"></div>
+				</div>
+
+			</div>
+		</form>
+		<div class="alpha bank-letters">
+			<div class="letters">
+				<a href="#">А</a>
+				<a href="#">Б</a>
+				<a href="#">В</a>
+				<a href="#">Г</a>
+				<a href="#">Д</a>
+				<a href="#">Е</a>
+				<a href="#">Ж</a>
+				<a href="#">З</a>
+				<a href="#">И</a>
+				<a href="#">Й</a>
+				<a href="#">К</a>
+				<a href="#">Л</a>
+				<a href="#">М</a>
+				<a href="#">Н</a>
+				<a href="#">О</a>
+				<a href="#">П</a>
+				<a href="#">Р</a>
+				<a href="#">С</a>
+				<a href="#">Т</a>
+				<a href="#">У</a>
+				<a href="#">Ф</a>
+				<a href="#">Х</a>
+				<a href="#">Ц</a>
+				<a href="#">Ч</a>
+				<a href="#">Э</a>
+				<a href="#">Ю</a>
+				<a href="#">Я</a>
+			</div>
+			<div class="all-banks">
+				<a href="#">Все банки</a>
+			</div>
+		</div>
+	</div>
+	<div id="all-banks-table-div">
+	<?$APPLICATION->IncludeComponent(
+		"bitrix:news.list",
+		"bank_search",
+		Array(
+			"COMPONENT_TEMPLATE" => "bank_search",
+			"IBLOCK_TYPE" => "Offices",
+			"IBLOCK_ID" => "10",
+			"NEWS_COUNT" => "7",
+			"SORT_BY1" => "",
+			"SORT_ORDER1" => "",
+			"SORT_BY2" => "",
+			"SORT_ORDER2" => "",
+			"FILTER_NAME" => "",
+			"FIELD_CODE" => array("ID","CODE","XML_ID","NAME","TAGS","SORT","PREVIEW_TEXT","PREVIEW_PICTURE","DETAIL_TEXT","DETAIL_PICTURE","DATE_ACTIVE_FROM","ACTIVE_FROM","DATE_ACTIVE_TO","ACTIVE_TO","SHOW_COUNTER","SHOW_COUNTER_START","IBLOCK_TYPE_ID","IBLOCK_ID","IBLOCK_CODE","IBLOCK_NAME","IBLOCK_EXTERNAL_ID","DATE_CREATE","CREATED_BY","CREATED_USER_NAME","TIMESTAMP_X","MODIFIED_BY","USER_NAME",""),
+			"PROPERTY_CODE" => array("","OWNER","SHIPPING_DATE","MODEL","DELIVERY_NOTE","BILL_NUMBER","END_OF_WARRANTY","SERIAL_NUMBER","STATUS",""),
+			"CHECK_DATES" => "Y",
+			"DETAIL_URL" => "",
+			"AJAX_MODE" => "Y",
+			"AJAX_OPTION_JUMP" => "N",
+			"AJAX_OPTION_STYLE" => "Y",
+			"AJAX_OPTION_HISTORY" => "N",
+			"AJAX_OPTION_ADDITIONAL" => "",
+			"CACHE_TYPE" => "A",
+			"CACHE_TIME" => "36000000",
+			"CACHE_FILTER" => "N",
+			"CACHE_GROUPS" => "Y",
+			"PREVIEW_TRUNCATE_LEN" => "",
+			"ACTIVE_DATE_FORMAT" => "d.m.Y",
+			"SET_TITLE" => "N",
+			"SET_BROWSER_TITLE" => "N",
+			"SET_META_KEYWORDS" => "Y",
+			"SET_META_DESCRIPTION" => "Y",
+			"SET_LAST_MODIFIED" => "N",
+			"INCLUDE_IBLOCK_INTO_CHAIN" => "Y",
+			"ADD_SECTIONS_CHAIN" => "Y",
+			"HIDE_LINK_WHEN_NO_DETAIL" => "N",
+			"PARENT_SECTION" => "",
+			"PARENT_SECTION_CODE" => "",
+			"INCLUDE_SUBSECTIONS" => "Y",
+			"DISPLAY_DATE" => "Y",
+			"DISPLAY_NAME" => "Y",
+			"DISPLAY_PICTURE" => "Y",
+			"DISPLAY_PREVIEW_TEXT" => "Y",
+			"PAGER_TEMPLATE" => "history_pagination",
+			"DISPLAY_TOP_PAGER" => "N",
+			"DISPLAY_BOTTOM_PAGER" => "Y",
+			"PAGER_TITLE" => "Новости",
+			"PAGER_SHOW_ALWAYS" => "N",
+			"PAGER_DESC_NUMBERING" => "N",
+			"PAGER_DESC_NUMBERING_CACHE_TIME" => "36000",
+			"PAGER_SHOW_ALL" => "N",
+			"PAGER_BASE_LINK_ENABLE" => "N",
+			"SET_STATUS_404" => "N",
+			"SHOW_404" => "N",
+			"MESSAGE_404" => "",
+			"TEMPLATE_THEME" => "blue",
+			"MEDIA_PROPERTY" => "",
+			"SLIDER_PROPERTY" => "",
+			"SEARCH_PAGE" => "/search/",
+			"USE_RATING" => "N",
+			"USE_SHARE" => "N"
+		)
+	);?> 
+	</div>
+</section> 
+<section id="content2">
+	<div class="inner">
+		<form id="search" class="device-block" enctype="multipart/form-data">
+			<div class="row">
+				<input type="text" name="searchtext" class="input-search-class" id="input-search-2" placeholder="Введи серийные номера, например:">
+				<div class="input-placeholder input-search-2">
+					<a href="#" data-id="input-search-2" data-value="154 901">154 901</a>
+				</div>
+			</div>
+			<div class="row">
+				<div class="help-line">
+					 или загрузите файл с серийными номерами
+				</div>
+				<label class="input-file" for="input-file">Выбрать</label> <input type="file" name="file-serials" id="input-file" class="input-file-hidden">
+				<div class="btn-col">
+					<button class="blue-btn">Найти</button>
+				</div>
+				<div class="clear"></div>
+			</div>
+		</form>
+	</div>
+	<div class="all-banks-block" id="all-banks-table-div-device">
+		<?$APPLICATION->IncludeComponent(
+			"bitrix:news.list",
+			"product_search",
+			Array(
+				"COMPONENT_TEMPLATE" => "product_search",
+				"IBLOCK_TYPE" => "Devices",
+				"IBLOCK_ID" => "6",
+				"NEWS_COUNT" => "3",
+				"SORT_BY1" => "",
+				"SORT_ORDER1" => "",
+				"SORT_BY2" => "",
+				"SORT_ORDER2" => "",
+				"FILTER_NAME" => "",
+				"FIELD_CODE" => array("ID","CODE","XML_ID","NAME","TAGS","SORT","PREVIEW_TEXT","PREVIEW_PICTURE","DETAIL_TEXT","DETAIL_PICTURE","DATE_ACTIVE_FROM","ACTIVE_FROM","DATE_ACTIVE_TO","ACTIVE_TO","SHOW_COUNTER","SHOW_COUNTER_START","IBLOCK_TYPE_ID","IBLOCK_ID","IBLOCK_CODE","IBLOCK_NAME","IBLOCK_EXTERNAL_ID","DATE_CREATE","CREATED_BY","CREATED_USER_NAME","TIMESTAMP_X","MODIFIED_BY","USER_NAME",""),
+				"PROPERTY_CODE" => array("","OWNER","SHIPPING_DATE","MODEL","DELIVERY_NOTE","BILL_NUMBER","END_OF_WARRANTY","SERIAL_NUMBER","STATUS",""),
+				"CHECK_DATES" => "Y",
+				"DETAIL_URL" => "",
+				"AJAX_MODE" => "Y",
+				"AJAX_OPTION_JUMP" => "N",
+				"AJAX_OPTION_STYLE" => "Y",
+				"AJAX_OPTION_HISTORY" => "N",
+				"AJAX_OPTION_ADDITIONAL" => "",
+				"CACHE_TYPE" => "A",
+				"CACHE_TIME" => "36000000",
+				"CACHE_FILTER" => "N",
+				"CACHE_GROUPS" => "Y",
+				"PREVIEW_TRUNCATE_LEN" => "",
+				"ACTIVE_DATE_FORMAT" => "d.m.Y",
+				"SET_TITLE" => "N",
+				"SET_BROWSER_TITLE" => "N",
+				"SET_META_KEYWORDS" => "Y",
+				"SET_META_DESCRIPTION" => "Y",
+				"SET_LAST_MODIFIED" => "N",
+				"INCLUDE_IBLOCK_INTO_CHAIN" => "Y",
+				"ADD_SECTIONS_CHAIN" => "Y",
+				"HIDE_LINK_WHEN_NO_DETAIL" => "N",
+				"PARENT_SECTION" => "",
+				"PARENT_SECTION_CODE" => "",
+				"INCLUDE_SUBSECTIONS" => "Y",
+				"DISPLAY_DATE" => "Y",
+				"DISPLAY_NAME" => "Y",
+				"DISPLAY_PICTURE" => "Y",
+				"DISPLAY_PREVIEW_TEXT" => "Y",
+				"PAGER_TEMPLATE" => "history_pagination",
+				"DISPLAY_TOP_PAGER" => "N",
+				"DISPLAY_BOTTOM_PAGER" => "Y",
+				"PAGER_TITLE" => "Новости",
+				"PAGER_SHOW_ALWAYS" => "N",
+				"PAGER_DESC_NUMBERING" => "N",
+				"PAGER_DESC_NUMBERING_CACHE_TIME" => "36000",
+				"PAGER_SHOW_ALL" => "N",
+				"PAGER_BASE_LINK_ENABLE" => "N",
+				"SET_STATUS_404" => "N",
+				"SHOW_404" => "N",
+				"MESSAGE_404" => "",
+				"TEMPLATE_THEME" => "blue",
+				"MEDIA_PROPERTY" => "",
+				"SLIDER_PROPERTY" => "",
+				"SEARCH_PAGE" => "/search/",
+				"USE_RATING" => "N",
+				"USE_SHARE" => "N"
+			)
+		);?> 
+		</div>
+ </section>
+		</div>
+	</div>
+</div>
+<div class="sidebar" id="lastActivityWrapper">
+	<?$APPLICATION->IncludeComponent(
+		"yadadya:last.activity",
+		"",
+		Array());?>
+</div>
+<div class="clear"></div>
+
+<br><?require($_SERVER["DOCUMENT_ROOT"]."/bitrix/footer.php");?>

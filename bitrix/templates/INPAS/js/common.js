@@ -1,5 +1,6 @@
 $(document).ready(function(){
 
+
 	$(".ui-select-input .ui-select-value").each(function(){
 		var default_value = $(this).attr("data-default");
 		$(this).html(default_value);
@@ -21,50 +22,57 @@ $(document).ready(function(){
 	$( "#date-pick-1" ).datepicker({
 		showOtherMonths: true,
 		onSelect: function(date){
-			var dateFrom = $("#date-pick-1").val();
-			var dateTo = $("#date-pick-2").val();
-			var link = $(this).data('link');
-			if(link == undefined) link = "/bitrix/components/yadadya/lastActivity.php";
-
-			$.ajax({
-				url: link,
-				data: { DATE_FROM: dateFrom, DATE_TO: dateTo }
-			}).done(function(res){
-				if(link.indexOf('bankdetailwarrantyblock') != -1)
-				{
-					$("#warrantyBlock").html(res);
-				}
-				else{
-					$("#lastActivityWrapper").html(res);
-				}
-			});
+			if(window.location.href.indexOf('/bank/') != -1 && $("#date-pick-2").val() != ''){
+				$.ajax({
+					url: "/bitrix/components/yadadya/bankdetailwarrantyblock.php",
+					data: { DATE_FROM: $(this).val(), DATE_TO: $("#date-pick-2").val() }
+				}).done(function(data){
+					$('#warrantyBlock').html(data);
+					$('#warrantyBlock').css('opacity', '1');
+				});
+				//hide warranty block
+				$('#warrantyBlock').css('opacity', '0.3');
+			}
+			if(window.location.pathname == "/" && $("#date-pick-2").val() != ''){
+				$.ajax({
+					url: "/bitrix/components/yadadya/bankdetailwarrantyblock.php",
+					data: { DATE_FROM: $(this).val(), DATE_TO: $("#date-pick-2").val() }
+				}).done(function(data){
+					$('#warrantyBlock').html(data);
+					$('#warrantyBlock').css('opacity', '1');
+				});
+			}
 		},
 		beforeShow:function(textbox, instance){
 	    	var element = $('#ui-datepicker-div').detach();
 	    	$('#bank-periods').append(element);
 		}
-
+		
 	});
 
 	$( "#date-pick-2" ).datepicker({
 		showOtherMonths: true,
 		onSelect: function(date){
-			var dateFrom = $("#date-pick-1").val();
-			var dateTo = $("#date-pick-2").val();
-			var link = $(this).data('link');
-			if(link == undefined) link = "/bitrix/components/yadadya/lastActivity.php";
-			$.ajax({
-				url: link,
-				data: { DATE_FROM: dateFrom, DATE_TO: dateTo }
-			}).done(function(res){
-				if(link.indexOf('bankdetailwarrantyblock') != -1)
-				{
-					$("#warrantyBlock").html(res);
-				}
-				else{
-					$("#lastActivityWrapper").html(res);
-				}
-			});
+			if(window.location.href.indexOf('/bank/') != -1 && $("#date-pick-1").val() != ''){
+				$.ajax({
+					url: "/bitrix/components/yadadya/bankdetailwarrantyblock.php",
+					data: { DATE_FROM: $(this).val(), DATE_TO: $("#date-pick-1").val() }
+				}).done(function(data){
+					$('#warrantyBlock').html(data);
+					$('#warrantyBlock').css('opacity', '1');
+				});
+				//hide warranty block
+				$('#warrantyBlock').css('opacity', '0.3');
+			}
+			if(window.location.pathname == "/" && $("#date-pick-2").val() != ''){
+				$.ajax({
+					url: "/bitrix/components/yadadya/bankdetailwarrantyblock.php",
+					data: { DATE_FROM: $(this).val(), DATE_TO: $("#date-pick-1").val() }
+				}).done(function(data){
+					$('#warrantyBlock').html(data);
+					$('#warrantyBlock').css('opacity', '1');
+				});
+			}
 		},
 		beforeShow:function(textbox, instance){
 	    	var element = $('#ui-datepicker-div').detach();
@@ -73,12 +81,8 @@ $(document).ready(function(){
 	});
 
 	$(".period-selectors-wrapper .date-clear").click(function(){
-		$.ajax({
-			url: "/bitrix/components/yadadya/lastActivity.php",
-			data: {'DATE_FROM': 'none', "DATE_TO": 'none'}
-		}).done(function(res){
-			$('#lastActivityWrapper').html(res);
-		});
+		$("#date-pick-1").val("28.06.2015");
+		$("#date-pick-2").val("28.06.2015");
 	})
 
 	$("#html").click(function(e){
@@ -86,85 +90,266 @@ $(document).ready(function(){
 			$(".ui-select-variants").hide();
 		}
 	})
-	$("#bank-1-variants-sel").selectize({allowEmptyOption:true});
-	$("#bank-2-variants-sel").selectize({allowEmptyOption:true});
-	$("#bank-3-variants-sel").selectize({allowEmptyOption:true});
-	$("#bank-4-variants-sel").selectize({allowEmptyOption:true});
-
+	
+    
      $('.splLink').click(function(){
       $('.splLink').toggleClass('bounce').parent().children('div.splCont').toggle('normal');
       return false;
     });
 
-});
 
-$(function(){
+    //-----
+    $("body").on("click", ".alert .alert-close", function(){
+    	var alert_html = $(this).closest(".alert")
+    	$(alert_html).fadeOut("slow", function(){
+    		$(alert_html).remove()
+    	})
+    })
 
-		var fd = new FormData();
+    $("#bank-1-variants-sel").selectize({
+    	allowEmptyOption:true,
+    	maxOptions: 10000000,
+    	onChange: function(value) {
+    		sss2[0].selectize.destroy();
+    		$(sss2[0]).selectize({
+				allowEmptyOption:true,
+				maxOptions: 10000000,
+				onChange: function(value) {
+		    		/*var model = $sel_model[0].selectize
+		    		if (value.length > 0) {
+		    			model.enable()
+		    		} else {
+		    			model.disable()
+		    			model.setValue("")
+		    		}*/
+				},
+		    	delimiter: ';',
+			    labelField: "label",
+			    valueField: "value",
+			    searchField: "label",
+		    	render: {
+			        option: function(data, escape) {
 
-		function sendSearchRequest(region, bankname, searchtext, changeableDiv){
-			$.ajax({
-				url: "/bitrix/components/yadadya/bank_search.php",
-				data: { reg: region, bank: bankname, text: searchtext }
-			}).done(function(res){
-				$('#'+changeableDiv).html(res);
+			        	if(jQuery.inArray(data.value, borel[borel['selected']]) !== -1) return '<div data-value="'+data.value+'" data-selectable class="option">'+data.label+'</div>';
+			        	
+			        	return '';
+					}
+				},
+				onDropdownOpen: function($dropdown){
+				}
 			});
-		}
-		function sendSearchProductRequest(changeableDiv){
-			
-			$.ajax({
-				url: "/bitrix/components/yadadya/product_search.php",
-				type: 'POST',
-			    data: fd,
-			    cache: false,
-	            contentType: false,
-	            processData: false,
-			}).done(function(res){
-				$('#'+changeableDiv).html(res);
-			});
-		}
 
-		$('.letters a').on('click', function(){
-			sendSearchRequest('none', 'none', $(this).text(), 'all-banks-table-div');
-			return false;
-		});
+			$('.officeBlock .selectize-input.items.full.has-options.has-items').css('height', '45px')
+    		borel['selected'] = value;
+    		/*var phil = $sel_phil[0].selectize;
+    		var model = $sel_model[0].selectize;
 
-		$('#search.bank-block .blue-btn').on('click', function(){
-			var region = $("#bank-2-variants-sel").val();
-			var bankname = $("#bank-1-variants-sel").val();
-			var searchtext = $('#input-search-1').val();
-
-			sendSearchRequest(region, bankname, searchtext, 'all-banks-table-div');
-
-			return false;
-		});
-
-		$('#search.device-block .blue-btn').on('click', function(){
-			
-			if($('#search.device-block #input-file').val() != ''){
-
+    		if (value.length > 0) {
+    			phil.enable();
+    		} else {
+    			phil.disable();
+    			phil.setValue("");
+    			model.disable();
+    			model.setValue("");
+    		}*/
+    
+    	},
+    	delimiter: ';',
+	    labelField: "label",
+	    valueField: "value",
+	    searchField: "label",
+    	render: {
+	        option: function(data, escape) {
+	        	return '<div data-value="'+data.value+'" data-selectable class="option">'+data.label+'</div>';
 			}
+		}
+    });
+    $sel_phil2 = $("#bank-2-variants-sel").selectize({
+		allowEmptyOption:true,
+		maxOptions: 10000000,
+		onChange: function(value) {
+    		/*var model = $sel_model[0].selectize
+    		if (value.length > 0) {
+    			model.enable()
+    		} else {
+    			model.disable()
+    			model.setValue("")
+    		}*/
+		},
+    	delimiter: ';',
+	    labelField: "label",
+	    valueField: "value",
+	    searchField: "label",
+    	render: {
+	        option: function(data, escape) {
 
-			fd.append("text", $('#input-search-2').val());
-
-			sendSearchProductRequest('all-banks-table-div-device');
-
-			return false;
-		});
-
-		$(':file').change(function(){
-
-		    var file = this.files[0];
-		    var type = file.type;
-		    
-		    if(type == "text/plain" || type == "application/vnd.ms-excel" || type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"){
-		    	fd.append('files[]', file, file.name);
-		    }
-		    else{
-		    	alert("Поддерживаются форматы .txt, .csv, .xls, .xlsx");
-		    	return;
-		    }
-
-		});
-
+	        	if(jQuery.inArray(data.value, borel[borel['selected']]) !== -1) return '<div data-value="'+data.value+'" data-selectable class="option">'+data.label+'</div>';
+	        	
+	        	return '';
+			}
+		},
+		onDropdownOpen: function($dropdown){
+		}
 	});
+	sss2 = $sel_phil2;
+    $("#bank-3-variants-sel").selectize({allowEmptyOption:true});
+    $("#bank-4-variants-sel").selectize({allowEmptyOption:true});
+
+    var $sel_bank, $sel_phil, $sel_model;
+
+    $sel_bank = $("#bank-1-variants-selrb").selectize({
+    	allowEmptyOption:true,
+    	maxOptions: 10000000,
+    	onChange: function(value) {
+    		sss[0].selectize.destroy();
+    		$(sss[0]).selectize({
+				allowEmptyOption:true,
+				maxOptions: 10000000,
+				onChange: function(value) {
+		    		var model = $sel_model[0].selectize
+		    		if (value.length > 0) {
+		    			model.enable()
+		    		} else {
+		    			model.disable()
+		    			model.setValue("")
+		    		}
+				},
+		    	delimiter: ';',
+			    labelField: "label",
+			    valueField: "value",
+			    searchField: "label",
+		    	render: {
+			        option: function(data, escape) {
+
+			        	if(jQuery.inArray(data.value, borel[borel['selected']]) !== -1) return '<div data-value="'+data.value+'" data-selectable class="option">'+data.label+'</div>';
+			        	
+			        	return '';
+					}
+				},
+				onDropdownOpen: function($dropdown){
+				}
+			});
+			$('.officeBlock .selectize-input.items.full.has-options.has-items').css('height', '45px')
+
+    		borel['selected'] = value;
+    		var phil = $sel_phil[0].selectize;
+    		var model = $sel_model[0].selectize;
+
+    		if (value.length > 0) {
+    			phil.enable();
+    		} else {
+    			phil.disable();
+    			phil.setValue("");
+    			model.disable();
+    			model.setValue("");
+    		}
+    
+    	},
+    	delimiter: ';',
+	    labelField: "label",
+	    valueField: "value",
+	    searchField: "label",
+    	render: {
+	        option: function(data, escape) {
+	        	return '<div data-value="'+data.value+'" data-selectable class="option">'+data.label+'</div>';
+			}
+		}
+    });
+
+	$sel_phil = $("#bank-2-variants-selrb").selectize({
+		allowEmptyOption:true,
+		maxOptions: 10000000,
+		onChange: function(value) {
+    		var model = $sel_model[0].selectize
+    		if (value.length > 0) {
+    			model.enable()
+    		} else {
+    			model.disable()
+    			model.setValue("")
+    		}
+		},
+    	delimiter: ';',
+	    labelField: "label",
+	    valueField: "value",
+	    searchField: "label",
+    	render: {
+	        option: function(data, escape) {
+
+	        	if(jQuery.inArray(data.value, borel[borel['selected']]) !== -1) return '<div data-value="'+data.value+'" data-selectable class="option">'+data.label+'</div>';
+	        	
+	        	return '';
+			}
+		},
+		onDropdownOpen: function($dropdown){
+		}
+	});
+	sss = $sel_phil;
+	$sel_model = $("#bank-3-variants-selrb").selectize({allowEmptyOption:true,
+		maxOptions: 10000000
+	});
+	if ($sel_phil[0] !== undefined) {
+		$sel_phil[0].selectize.disable()
+	}
+	if ($sel_model[0] !== undefined) {
+		$sel_model[0].selectize.disable()
+	}
+
+	var $sel_bank2, $sel_phil2, $sel_model2;
+
+    $sel_bank2 = $("#bank-4-variants-selrb").selectize({
+    	allowEmptyOption:true,
+    	onChange: function(value) {
+    		var phil = $sel_phil2[0].selectize
+    		var model = $sel_model2[0].selectize
+    		if (value.length > 0) {
+    			phil.enable()
+    		} else {
+    			phil.disable()
+    			phil.setValue("")
+    			model.disable()
+    			model.setValue("")
+    		}
+    	}
+    });
+	$sel_phil2 = $("#bank-5-variants-selrb").selectize({
+		allowEmptyOption:true,
+		onChange: function(value) {
+    		var model = $sel_model2[0].selectize
+    		if (value.length > 0) {
+    			model.enable()
+    		} else {
+    			model.disable()
+    			model.setValue("")
+    		}
+		}
+	});
+	$sel_model2 = $("#bank-6-variants-selrb").selectize({allowEmptyOption:true});
+	if ($sel_phil2[0] !== undefined) {
+		$sel_phil2[0].selectize.disable()
+	}
+	if ($sel_model2[0] !== undefined) {
+		$sel_model2[0].selectize.disable()
+	}
+
+	var sutags = $(".su-tags")
+	if (sutags.length !== 0) {
+		sutags.tagsinput({})
+	}
+
+	var selsu = $("#bank-2-variants-selsu").selectize({
+		onChange: function(value) {
+			if (!value.length) return;
+			var ti = $("#taginput input")
+			var val = selsu[0].selectize.options[value]
+			sutags.tagsinput("add", val.text)
+			selsu[0].selectize.clear()
+		}		
+	})
+
+
+	$(".button-file-input input[type=file]").on('change', function(){
+		var theFile = $(this).val().replace(/.+[\\\/]/, "");
+		$(this).closest(".button-file-input").find("input[type=text]").val(theFile);
+	})
+})
+

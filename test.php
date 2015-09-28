@@ -1,7 +1,9 @@
 <?
 require($_SERVER["DOCUMENT_ROOT"]."/bitrix/header.php");
 $APPLICATION->SetTitle("test");
-?><?$APPLICATION->IncludeComponent("bitrix:news.detail", "bankDetail", Array(
+?><?
+d($_SESSION);
+/*$APPLICATION->IncludeComponent("bitrix:news.detail", "bankDetail", Array(
 	"COMPONENT_TEMPLATE" => ".default",
 		"IBLOCK_TYPE" => "Offices",	// Тип информационного блока (используется только для проверки)
 		"IBLOCK_ID" => "10",	// Код информационного блока
@@ -56,4 +58,4 @@ $APPLICATION->SetTitle("test");
 		"MESSAGE_404" => "",	// Сообщение для показа (по умолчанию из компонента)
 	),
 	false
-);?><?require($_SERVER["DOCUMENT_ROOT"]."/bitrix/footer.php");?>
+);*/?><?require($_SERVER["DOCUMENT_ROOT"]."/bitrix/footer.php");?>
